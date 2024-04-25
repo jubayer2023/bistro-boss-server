@@ -32,12 +32,18 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
+        const dataBase = client.db('bistroBossDb');
+        const menuCollection = dataBase.collection('menu');
+        const reviewCollection = dataBase.collection('review');
 
-
-
-
-
-
+        app.get('/menu', async (req, res) => {
+            const menu = await menuCollection.find().toArray();
+            res.send(menu);
+        })
+        app.get('/review', async (req, res) => {
+            const review = await reviewCollection.find().toArray();
+            res.send(review);
+        })
 
 
 
