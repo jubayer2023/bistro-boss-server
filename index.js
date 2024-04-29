@@ -10,7 +10,7 @@ const port = process.env.PORT || 5000;
 
 // middleware
 app.use(cors());
-app.use(express());
+app.use(express.json());
 
 
 
@@ -33,8 +33,10 @@ async function run() {
         await client.connect();
 
         const dataBase = client.db('bistroBossDb');
+        // database collection
         const menuCollection = dataBase.collection('menu');
         const reviewCollection = dataBase.collection('review');
+        const cartCollection = dataBase.collection('carts');
 
         app.get('/menu', async (req, res) => {
             const menu = await menuCollection.find().toArray();
@@ -46,6 +48,21 @@ async function run() {
         })
 
 
+
+        // get cartCollection
+        app.get('/carts', async (req, res) => {
+            const result = await cartCollection.find().toArray();
+            res.send(result);
+        })
+
+
+        // add cart to carts collection
+        app.post('/carts', async (req, res) => {
+            const cartInfo = req.body;
+            // console.log(cartInfo, "cart");
+            const result = await cartCollection.insertOne(cartInfo);
+            res.send(result);
+        })
 
 
         // Send a ping to confirm a successful connection
