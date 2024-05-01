@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
+
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 require('dotenv').config()
@@ -32,6 +34,9 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
+
+
+
         const dataBase = client.db('bistroBossDb');
         // database collection
         const menuCollection = dataBase.collection('menu');
@@ -41,6 +46,63 @@ async function run() {
 
 
 
+        // jwt api create and save
+        app.post('/jwt', async (req, res) => {
+            const user = req.body;
+
+            const token = jwt.sign(user, process.env.TOKEN_ACCESS_SECRET, { expiresIn: '1h' })
+
+            console.log(token);
+            res.send({ token })
+        })
+
+        // verify token
+        const verifyToken = async (req, res, next) => {
+
+            // console.log("token from verifyToken: ", req.headers);
+            const token = req.headers?.authorization.split(' ')[1];
+            // console.log(" from verifyToken :", token);
+
+            if (!token) {
+                return res.status(401).send({ message: "Unauthorized Access" });
+            } else {
+                jwt.verify(token, process.env.TOKEN_ACCESS_SECRET, (err, decoded) => {
+                    if (err) {
+                        return res.status(401).send({ message: "Forbidden access" });
+                    }
+                    else {
+                        req.decodedUser = decoded;
+                        next();
+                    }
+                })
+            }
+
+        }
+
+
+
+
+
+
+
+        // get users
+        app.get('/users', verifyToken, async (req, res) => {
+            // const token = req.headers;
+            // console.log("token from user", token);
+            const tokenUser = req.decodedUser;
+
+            console.log("tokenUser from verified token: ", tokenUser);
+            const data = await userCollection.find().toArray();
+            res.send(data);
+        })
+
+        // delete user
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await userCollection.deleteOne(query);
+            res.send(result);
+        })
 
         // users post 
         app.post('/users', async (req, res) => {
@@ -57,7 +119,7 @@ async function run() {
 
                 if (existUser) {
                     res.send({ message: true });
-                    console.log("user exist")
+                    // console.log("user exist")
                 }
                 else {
                     const result = await userCollection.insertOne(userInfo);
@@ -69,19 +131,7 @@ async function run() {
             }
 
         })
-        // get users
-        app.get('/users', async (req, res) => {
-            const data = await userCollection.find().toArray();
-            res.send(data);
-        })
 
-        // delete user
-        app.delete('/users/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            const result = await userCollection.deleteOne(query);
-            res.send(result);
-        })
 
         // make admin
         app.patch('/users/admin/:id', async (req, res) => {
