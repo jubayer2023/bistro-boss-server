@@ -37,6 +37,48 @@ async function run() {
         const menuCollection = dataBase.collection('menu');
         const reviewCollection = dataBase.collection('review');
         const cartCollection = dataBase.collection('carts');
+        const userCollection = dataBase.collection('users');
+
+
+
+
+        // users post 
+        app.post('/users', async (req, res) => {
+            const userInfo = req.body;
+            // console.log(userInfo.email);
+            let query = {};
+            if (userInfo) {
+                query = { email: userInfo?.email };
+            }
+
+            try {
+                const existUser = await userCollection.findOne(query);
+                console.log(query);
+
+                if (existUser) {
+                    res.send({ message: true });
+                    console.log("user exist")
+                }
+                else {
+                    const result = await userCollection.insertOne(userInfo);
+                    res.send(result);
+                }
+            }
+            catch (error) {
+                res.send("Internal server error")
+            }
+
+        })
+        // get users
+        app.get('/users', async (req, res) => {
+            const data = await userCollection.find().toArray();
+            res.send(data);
+        })
+
+
+
+
+        // menu and review
 
         app.get('/menu', async (req, res) => {
             const menu = await menuCollection.find().toArray();
