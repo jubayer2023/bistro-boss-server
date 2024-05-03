@@ -189,6 +189,19 @@ async function run() {
             const menu = await menuCollection.find().toArray();
             res.send(menu);
         })
+
+        // delete menuitem
+        app.delete('/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+
+            const deleteItem = await menuCollection.deleteOne(query);
+            res.send(deleteItem);
+        })
+
+
+
+
         app.get('/review', async (req, res) => {
             const review = await reviewCollection.find().toArray();
             res.send(review);
