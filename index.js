@@ -176,7 +176,12 @@ async function run() {
         })
 
 
-
+        //post add item
+        app.post('/menu', verifyToken, verifyAdmin, async (req, res) => {
+            const menuInfo = req.body;
+            const result = await menuCollection.insertOne(menuInfo);
+            res.send(result);
+        })
 
         // menu and review
 
