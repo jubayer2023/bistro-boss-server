@@ -44,6 +44,7 @@ async function run() {
         const reviewCollection = dataBase.collection('review');
         const cartCollection = dataBase.collection('carts');
         const userCollection = dataBase.collection('users');
+        const paymentCollection = dataBase.collection('payments');
 
 
 
@@ -263,8 +264,8 @@ async function run() {
         // delet carts
         app.delete('/carts/:id', async (req, res) => {
             const id = req.params.id;
-            // console.log(req.params.id);
             const query = { _id: new ObjectId(id) };
+            console.log(query);
 
             try {
                 const result = await cartCollection.deleteOne(query);
@@ -304,7 +305,32 @@ async function run() {
                 clientSecret: paymentIntent.client_secret,
             });
 
+        });
+
+        // create payment collection
+        app.post('/payments', async (req, res) => {
+            const paymentInfo = req.body;
+            const { cartIds, oldIds } = paymentInfo;
+            // console.log("cartIds : ", cartIds, "oldIds : ", oldIds);
+
+            const paymentResult = await paymentCollection.insertOne(paymentInfo);
+
+            // const ids = cartIds.map(id => id);
+            const query = {
+                _id: {
+                    $in: cartIds.map(id => new ObjectId(id))
+                }
+            }
+
+            console.log(query);
+            const deleteResult = await cartCollection.deleteMany(query);
+
+            res.send({ paymentResult, deleteResult });
+
         })
+
+
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
