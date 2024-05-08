@@ -329,6 +329,18 @@ async function run() {
 
         })
 
+        // get payment info 
+        app.get('/payments', verifyToken, async (req, res) => {
+            const email = req.query.email;
+            if (req.query.email !== req.decodedUser?.email) {
+                res.status(403).send({ message: 'Forbidden' });
+            }
+            const query = { email: email };
+            console.log(query);
+            const result = await paymentCollection.find(query).toArray();
+            res.send(result);
+        })
+
 
 
 
