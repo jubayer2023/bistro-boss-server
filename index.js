@@ -33,7 +33,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
 
 
@@ -338,6 +338,61 @@ async function run() {
             const query = { email: email };
             console.log(query);
             const result = await paymentCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        // admin stats === admin data
+        app.get('/admin-stats', verifyToken, verifyAdmin, async (req, res) => {
+            const users = await userCollection.countDocuments();
+            const menuItems = await menuCollection.countDocuments();
+            const orders = await paymentCollection.countDocuments();
+
+            // this not the best way
+            // const payments = await paymentCollection.find().toArray();
+            // const totalRevenue = payments.reduce((total, payment) => total + payment.price, 0);
+
+            console.log(req.decodedUser.email)
+            // aggregate pipeline
+            const aggregatePipeline = [
+                {
+                    $group: {
+                        _id: null,
+                        revenue: { $sum: '$price' },
+                    }
+                }
+            ];
+
+            const result = await paymentCollection.aggregate(aggregatePipeline).toArray();
+            // console.log(result);
+            const totalRevenue = result.length > 0 ? result[0].revenue : 0;
+
+            console.log(totalRevenue);
+
+            res.send({
+                users, menuItems, orders, totalRevenue
+            });
+        })
+
+        // order stats
+        app.get('/order-stats', async (req, res) => {
+            const result = await paymentCollection.aggregate([
+                {
+                    $unwind: '$oldIds'
+                },
+                {
+                    $lookup: {
+                        from: 'menu',
+                        localField: 'oldIds',
+                        foreignField: '_id',
+                        as: 'oldMenuItems',
+                    }
+                },
+                {
+                    $unwind: '$oldMenuItems'
+                }
+
+            ]).toArray();
+
             res.send(result);
         })
 
